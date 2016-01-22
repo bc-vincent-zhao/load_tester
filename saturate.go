@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -32,16 +33,27 @@ func saturate(opts *saturateOpts) error {
 		return err
 	}
 
+	now := time.Now().Unix()
 	for i, ep := range spec.Endpoints {
-		saveTo := fmt.Sprintf(">%s_run_%d.txt", opts.outputPrefix, i)
-		if err = exec.Command("wrk", "-t4", "-c100", "-d5M", "--script="+ep.Script, ep.Url, saveTo).Run(); err != nil {
+		var output []byte
+		if output, err = exec.Command("wrk", "-t4", "-c100", "-d1M", "--script="+ep.Script, ep.Url).Output(); err != nil {
 			return err
 		}
 
-		// sleep 2 minute between each endpoint to give
+		file, err := os.Create(fmt.Sprintf("%s_run_%s_%d.txt", opts.outputPrefix, ep.Name, now))
+		if err != nil {
+			return err
+		}
+
+		_, err = file.Write(output)
+		if err != nil {
+			return err
+		}
+
+		// sleep a minute between each endpoint to give
 		// already queued requests time to finish
 		if i != len(spec.Endpoints)-1 {
-			time.Sleep(2 * time.Minute)
+			time.Sleep(time.Minute)
 		}
 	}
 
