@@ -24,7 +24,7 @@ func randomizeCmd() command {
 	fs.StringVar(&opts.baseUrl, "baseUrl", "", "base url for target")
 	fs.StringVar(&opts.outputPrefix, "outputPrefix", "", "output prefix to store randomized urls")
 	fs.IntVar(&opts.count, "count", 100000, "number of randomised urls to generate")
-	fs.IntVar(&opts.maxBodySize, "maxBodySize", 100000, "max PUT/POST request body size in bytes")
+	fs.IntVar(&opts.maxBodySize, "maxBodySize", 4000, "max PUT/POST request body size in bytes")
 
 	return command{fs, func(args []string) error {
 		fs.Parse(args)
@@ -62,6 +62,7 @@ func generateRandUrlFile(output string, baseUrl string, count int) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	now := time.Now().Unix()
 	for i := 0; i < count; i++ {
@@ -77,6 +78,7 @@ func generateRandBodyFile(output string, count int, maxSize int) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	for i := 0; i < count; i++ {
 		file.WriteString(randString(mrand.Intn(maxSize)) + "\n")

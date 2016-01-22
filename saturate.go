@@ -36,11 +36,12 @@ func saturate(opts *saturateOpts) error {
 	now := time.Now().Unix()
 	for i, ep := range spec.Endpoints {
 		var output []byte
-		if output, err = exec.Command("wrk", "-t4", "-c100", "-d1M", "--script="+ep.Script, ep.Url).Output(); err != nil {
+		cmd := exec.Command("wrk", "-t4", "-c100", "-d5m", "--script="+ep.Script, ep.Url)
+		if output, err = cmd.Output(); err != nil {
 			return err
 		}
 
-		file, err := os.Create(fmt.Sprintf("%s_run_%s_%d.txt", opts.outputPrefix, ep.Name, now))
+		file, err := os.Create(fmt.Sprintf("%s_%s_%d.txt", opts.outputPrefix, ep.Name, now))
 		if err != nil {
 			return err
 		}
