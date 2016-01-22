@@ -33,13 +33,20 @@ func randomizeCmd() command {
 }
 
 func randomize(opts *randomizeOpts) error {
-	now := time.Now().Unix()
-	err := generateRandUrlFile(fmt.Sprintf("%s_%d.urls", opts.outputPrefix, now), opts.baseUrl, opts.count)
+	urlsFile := fmt.Sprintf("%s.urls", opts.outputPrefix)
+	bodiesFile := fmt.Sprintf("%s.bodies", opts.outputPrefix)
+
+	err := generateRandUrlFile(urlsFile, opts.baseUrl, opts.count)
 	if err != nil {
 		return err
 	}
 
-	return generateRandBodyFile(fmt.Sprintf("%s_%d.bodies", opts.outputPrefix, now), opts.count, opts.maxBodySize)
+	err = generateRandBodyFile(bodiesFile, opts.count, opts.maxBodySize)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // randString returns a random string with given length

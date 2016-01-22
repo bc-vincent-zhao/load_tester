@@ -3,19 +3,44 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"time"
+
+	"gopkg.in/yaml.v2"
 )
+
+type Spec struct {
+	Endpoints []Endpoint
+}
+
+type Endpoint struct {
+	Name   string
+	Method string
+	Url    string
+	Script string
+}
+
+type command struct {
+	fs *flag.FlagSet
+	fn func(args []string) error
+}
 
 func main() {
 
 	commands := map[string]command{
 		"randomize": randomizeCmd(),
+		"saturate":  saturateCmd(),
+		"sustain":   sustainCmd(),
 	}
 
 	fs := flag.NewFlagSet("loadtest", flag.ExitOnError)
+	reps := fs.Int("reps", 5, "# of repititions to run a single load test")
+
 	fs.Usage = func() {
-		fmt.Println("Usage: loadtest <command> [command flags]")
+		fmt.Println("Usage: loadtest [global flags] <command> [command flags]")
+		fmt.Printf("\n global flags:\n")
 		fs.PrintDefaults()
 		for name, cmd := range commands {
 			fmt.Printf("\n%s command:\n", name)
@@ -31,14 +56,39 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cmd, ok := commands[args[0]]; !ok {
+	var cmd command
+	var ok bool
+	if cmd, ok = commands[args[0]]; !ok {
 		log.Fatalf("Unknown command %s", args[0])
-	} else if err := cmd.fn(args[1:]); err != nil {
-		log.Fatal(err)
+	}
+
+	if args[0] == "randomize" {
+		*reps = 1
+	}
+
+	// repeat load testing commands multiple times
+	// to make sure out test setup is not flawed
+	// and we can use the sample to identify outliers
+	for i := 0; i < *reps; i++ {
+		if err := cmd.fn(args[1:]); err != nil {
+			log.Fatal(err)
+		}
+		// sleep 2 minute between each test run to give
+		// already queued requests time to finish
+		if i != *reps-1 {
+			time.Sleep(2 * time.Minute)
+		}
 	}
 }
 
-type command struct {
-	fs *flag.FlagSet
-	fn func(args []string) error
+func readSpec(file string) (Spec, error) {
+	var spec Spec
+
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return spec, err
+	}
+
+	err = yaml.Unmarshal(data, &spec)
+	return spec, err
 }
