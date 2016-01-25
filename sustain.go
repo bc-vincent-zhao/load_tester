@@ -40,6 +40,7 @@ func sustain(opts *sustainOpts) error {
 		script := fmt.Sprintf("--script=%s", ep.Script)
 
 		cmd := exec.Command("wrk2", "-t4", "-c100", "-d5m", rate, script, "--latency", ep.Url)
+		fmt.Printf("running %v \n", cmd)
 		if output, err = cmd.Output(); err != nil {
 			return err
 		}
@@ -67,6 +68,7 @@ func sustain(opts *sustainOpts) error {
 		output := fmt.Sprintf("-output=%s_%s_@%d_%d.bin", opts.outputPrefix, ep.Name, ep.RequestRate, now)
 
 		cmd := exec.Command("vegeta", "attack", targets, header, "-duration=5m", rate, workers, output)
+		fmt.Printf("running %v \n", cmd)
 		if err = cmd.Run(); err != nil {
 			return err
 		}

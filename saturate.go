@@ -37,6 +37,7 @@ func saturate(opts *saturateOpts) error {
 	for i, ep := range spec.Endpoints {
 		var output []byte
 		cmd := exec.Command("wrk", "-t4", "-c100", "-d5m", "--script="+ep.Script, ep.Url)
+		fmt.Printf("running %v \n", cmd)
 		if output, err = cmd.Output(); err != nil {
 			return err
 		}
