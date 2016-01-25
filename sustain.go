@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"time"
@@ -62,12 +60,6 @@ func sustain(opts *sustainOpts) error {
 	}
 
 	for i, ep := range spec.Endpoints {
-
-		// create targets file from random urls and request bodies
-		if err = writeTargetsFile(ep.Method, ep.UrlsFile, ep.BodiesFile, ep.TargetsFile); err != nil {
-			return err
-		}
-
 		targets := fmt.Sprintf("-targets=%s", ep.TargetsFile)
 		header := fmt.Sprintf("-header=X-Auth-Token: %s", spec.AuthToken)
 		rate := fmt.Sprintf("-rate=%d", ep.RequestRate)
@@ -83,61 +75,6 @@ func sustain(opts *sustainOpts) error {
 		// already queued requests time to finish
 		if i != len(spec.Endpoints)-1 {
 			time.Sleep(time.Minute)
-		}
-	}
-
-	return nil
-}
-
-func writeTargetsFile(method, urls, bodies, targets string) error {
-	urlsFile, err := os.Open(urls)
-	if err != nil {
-		return err
-	}
-	defer urlsFile.Close()
-	urlReader := bufio.NewScanner(urlsFile)
-
-	targetsFile, err := os.Create(targets)
-	if err != nil {
-		return err
-	}
-	defer targetsFile.Close()
-
-	if method == "PUT" || method == "POST" {
-		bodiesFile, err := os.Open(bodies)
-		if err != nil {
-			return err
-		}
-		defer bodiesFile.Close()
-		bodyReader := bufio.NewScanner(bodiesFile)
-
-		for urlReader.Scan() && bodyReader.Scan() {
-			// create a temp file for store body because vegeta
-			// requires body to be in file instead of raw string
-			// we don't delete tmp files for now because they can
-			// be handy for debugging or re-run commands manually
-			tmp, err := ioutil.TempFile("", "load_test")
-			if err != nil {
-				return err
-			}
-			defer tmp.Close()
-
-			if _, err = tmp.Write(bodyReader.Bytes()); err != nil {
-				return err
-			}
-
-			if _, err = targetsFile.WriteString(fmt.Sprintf("%s %s\n", method, urlReader.Text())); err != nil {
-				return err
-			}
-			if _, err = targetsFile.WriteString(fmt.Sprintf("@%s\n", tmp.Name())); err != nil {
-				return err
-			}
-		}
-	} else if method == "GET" || method == "HEAD" || method == "DELETE" {
-		for urlReader.Scan() {
-			if _, err = targetsFile.WriteString(fmt.Sprintf("%s %s\n", method, urlReader.Text())); err != nil {
-				return err
-			}
 		}
 	}
 

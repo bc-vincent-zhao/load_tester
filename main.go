@@ -12,8 +12,10 @@ import (
 )
 
 type Spec struct {
-	AuthToken string
-	Endpoints []Endpoint
+	AuthToken  string
+	UrlsFile   string `yaml:"rand_urls_file"`
+	BodiesFile string `yaml:"rand_bodies_file"`
+	Endpoints  []Endpoint
 }
 
 type Endpoint struct {
@@ -21,8 +23,6 @@ type Endpoint struct {
 	Method      string
 	Url         string
 	Script      string
-	UrlsFile    string `yaml:"rand_urls_file"`
-	BodiesFile  string `yaml:"rand_bodies_file"`
 	TargetsFile string `yaml:"targets_file"`
 	RequestRate int    `yaml:"request_rate"`
 }
