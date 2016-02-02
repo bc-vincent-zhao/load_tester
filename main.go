@@ -18,16 +18,18 @@ type Spec struct {
 	MaxBodySize int    `yaml:"max_body_size"`
 	UrlsFile    string `yaml:"rand_urls_file"`
 	BodiesFile  string `yaml:"rand_bodies_file"`
+	Duration    string `yaml:"duration"`
 	Endpoints   []Endpoint
 }
 
 type Endpoint struct {
-	Name        string
-	Method      string
-	Url         string
-	Script      string
-	TargetsFile string `yaml:"targets_file"`
-	RequestRate int    `yaml:"request_rate"`
+	Name         string
+	Method       string
+	Url          string
+	Script       string
+	TargetsFile  string `yaml:"targets_file"`
+	RequestRate  int    `yaml:"request_rate"`
+	CustomHeader string `yaml:"custom_header"`
 }
 
 type command struct {
@@ -38,8 +40,9 @@ type command struct {
 func main() {
 
 	commands := map[string]command{
-		"saturate": saturateCmd(),
-		"sustain":  sustainCmd(),
+		"saturate":  saturateCmd(),
+		"histogram": histogramCmd(),
+		"ts":        tsCmd(),
 	}
 
 	fs := flag.NewFlagSet("load_test", flag.ExitOnError)
