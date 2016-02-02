@@ -12,10 +12,13 @@ import (
 )
 
 type Spec struct {
-	AuthToken  string
-	UrlsFile   string `yaml:"rand_urls_file"`
-	BodiesFile string `yaml:"rand_bodies_file"`
-	Endpoints  []Endpoint
+	BaseUrl     string `yaml:"base_url"`
+	AuthToken   string `yaml:"auth_token"`
+	RandCount   int    `yaml:"rand_count"`
+	MaxBodySize int    `yaml:"max_body_size"`
+	UrlsFile    string `yaml:"rand_urls_file"`
+	BodiesFile  string `yaml:"rand_bodies_file"`
+	Endpoints   []Endpoint
 }
 
 type Endpoint struct {
@@ -29,22 +32,22 @@ type Endpoint struct {
 
 type command struct {
 	fs *flag.FlagSet
-	fn func(args []string) error
+	fn func(spec Spec, args []string) error
 }
 
 func main() {
 
 	commands := map[string]command{
-		"randomize": randomizeCmd(),
-		"saturate":  saturateCmd(),
-		"sustain":   sustainCmd(),
+		"saturate": saturateCmd(),
+		"sustain":  sustainCmd(),
 	}
 
-	fs := flag.NewFlagSet("loadtest", flag.ExitOnError)
-	reps := fs.Int("reps", 5, "# of repititions to run a single load test")
+	fs := flag.NewFlagSet("load_test", flag.ExitOnError)
+	reps := fs.Int("reps", 1, "# of repititions to run a single load test")
+	specFile := fs.String("specFile", "", "spec yaml for all endpoints to test")
 
 	fs.Usage = func() {
-		fmt.Println("Usage: loadtest [global flags] <command> [command flags]")
+		fmt.Println("Usage: load_test [global flags] <command> [command flags]")
 		fmt.Printf("\n global flags:\n")
 		fs.PrintDefaults()
 		for name, cmd := range commands {
@@ -67,15 +70,24 @@ func main() {
 		log.Fatalf("Unknown command %s", args[0])
 	}
 
-	if args[0] == "randomize" {
-		*reps = 1
+	// read in the test spec
+	spec, err := readSpec(*specFile)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// repeat load testing commands multiple times
 	// to make sure out test setup is not flawed
 	// and we can use the sample to identify outliers
 	for i := 0; i < *reps; i++ {
-		if err := cmd.fn(args[1:]); err != nil {
+		// generate randomized urls and data for each test iteration
+		// to make sure we hit longest execution path instead of some cache
+		if err := randomize(spec); err != nil {
+			log.Fatal(err)
+		}
+
+		// run the actual test command
+		if err := cmd.fn(spec, args[1:]); err != nil {
 			log.Fatal(err)
 		}
 		// sleep 2 minute between each test run to give

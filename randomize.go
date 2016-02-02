@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto/rand"
 	"encoding/hex"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	mrand "math/rand"
@@ -12,40 +11,13 @@ import (
 	"time"
 )
 
-type randomizeOpts struct {
-	count       int
-	baseUrl     string
-	maxBodySize int
-	specFile    string
-}
-
-func randomizeCmd() command {
-	fs := flag.NewFlagSet("randomize", flag.ExitOnError)
-	opts := &randomizeOpts{}
-
-	fs.StringVar(&opts.baseUrl, "baseUrl", "", "base url for target")
-	fs.IntVar(&opts.count, "count", 100000, "number of randomised urls to generate")
-	fs.IntVar(&opts.maxBodySize, "maxBodySize", 4000, "max PUT/POST request body size in bytes")
-	fs.StringVar(&opts.specFile, "specFile", "", "spec yaml for all endpoints to test")
-
-	return command{fs, func(args []string) error {
-		fs.Parse(args)
-		return randomize(opts)
-	}}
-}
-
-func randomize(opts *randomizeOpts) error {
-	spec, err := readSpec(opts.specFile)
+func randomize(spec Spec) error {
+	err := generateRandUrlFile(spec.UrlsFile, spec.BaseUrl, spec.RandCount)
 	if err != nil {
 		return err
 	}
 
-	err = generateRandUrlFile(spec.UrlsFile, opts.baseUrl, opts.count)
-	if err != nil {
-		return err
-	}
-
-	err = generateRandBodyFile(spec.BodiesFile, opts.count, opts.maxBodySize)
+	err = generateRandBodyFile(spec.BodiesFile, spec.RandCount, spec.MaxBodySize)
 	if err != nil {
 		return err
 	}

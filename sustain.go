@@ -9,7 +9,6 @@ import (
 )
 
 type sustainOpts struct {
-	specFile     string
 	outputPrefix string
 }
 
@@ -18,24 +17,21 @@ func sustainCmd() command {
 	fs := flag.NewFlagSet("sustain", flag.ExitOnError)
 	opts := &sustainOpts{}
 
-	fs.StringVar(&opts.specFile, "specFile", "", "spec yaml for all endpoints to test")
 	fs.StringVar(&opts.outputPrefix, "outputPrefix", "sustain", "output prefix to store test result")
 
-	return command{fs, func(args []string) error {
+	return command{fs, func(spec Spec, args []string) error {
 		fs.Parse(args)
-		return sustain(opts)
+		return sustain(spec, opts)
 	}}
 }
 
-func sustain(opts *sustainOpts) error {
-	spec, err := readSpec(opts.specFile)
-	if err != nil {
-		return err
-	}
-
+func sustain(spec Spec, opts *sustainOpts) error {
 	now := time.Now().Unix()
 	for _, ep := range spec.Endpoints {
-		var output []byte
+		var (
+			output []byte
+			err    error
+		)
 		rate := fmt.Sprintf("--rate=%d", ep.RequestRate)
 		script := fmt.Sprintf("--script=%s", ep.Script)
 
@@ -69,7 +65,7 @@ func sustain(opts *sustainOpts) error {
 
 		cmd := exec.Command("vegeta", "attack", targets, header, "-duration=5m", rate, workers, output)
 		fmt.Printf("running %v \n", cmd)
-		if err = cmd.Run(); err != nil {
+		if err := cmd.Run(); err != nil {
 			return err
 		}
 

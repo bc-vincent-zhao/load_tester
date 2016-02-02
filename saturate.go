@@ -9,7 +9,6 @@ import (
 )
 
 type saturateOpts struct {
-	specFile     string
 	outputPrefix string
 }
 
@@ -18,24 +17,21 @@ func saturateCmd() command {
 	fs := flag.NewFlagSet("saturate", flag.ExitOnError)
 	opts := &saturateOpts{}
 
-	fs.StringVar(&opts.specFile, "specFile", "", "spec yaml for all endpoints to test")
 	fs.StringVar(&opts.outputPrefix, "outputPrefix", "saturate", "output prefix to store test result")
 
-	return command{fs, func(args []string) error {
+	return command{fs, func(spec Spec, args []string) error {
 		fs.Parse(args)
-		return saturate(opts)
+		return saturate(spec, opts)
 	}}
 }
 
-func saturate(opts *saturateOpts) error {
-	spec, err := readSpec(opts.specFile)
-	if err != nil {
-		return err
-	}
-
+func saturate(spec Spec, opts *saturateOpts) error {
 	now := time.Now().Unix()
 	for i, ep := range spec.Endpoints {
-		var output []byte
+		var (
+			output []byte
+			err    error
+		)
 		cmd := exec.Command("wrk", "-t4", "-c100", "-d5m", "--script="+ep.Script, ep.Url)
 		fmt.Printf("running %v \n", cmd)
 		if output, err = cmd.Output(); err != nil {
