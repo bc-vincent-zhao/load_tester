@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"math"
 	mrand "math/rand"
 	"os"
 	"time"
@@ -120,7 +121,8 @@ func generateRandBodyFile(output string, count int, maxSize int) error {
 	defer file.Close()
 
 	for i := 0; i < count; i++ {
-		file.WriteString(randString(mrand.Intn(maxSize)) + "\n")
+		size := int(math.Max(16, float64(mrand.Intn(maxSize))))
+		file.WriteString(randString(size) + "\n")
 	}
 
 	return nil
