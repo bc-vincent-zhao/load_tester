@@ -64,24 +64,14 @@ func writeTargetsFile(method, urls, bodies, targets string) error {
 		bodyReader := bufio.NewScanner(bodiesFile)
 
 		for urlReader.Scan() && bodyReader.Scan() {
-			// create a temp file for store body because vegeta
-			// requires body to be in file instead of raw string
-			// we don't delete tmp files for now because they can
-			// be handy for debugging or re-run commands manually
-			tmp, err := ioutil.TempFile("", "load_test")
+			tmpBodyFile, err := writeTempRequestBodyFile(bodyReader.Bytes())
 			if err != nil {
 				return err
 			}
-			defer tmp.Close()
-
-			if _, err = tmp.Write(bodyReader.Bytes()); err != nil {
-				return err
-			}
-
 			if _, err = targetsFile.WriteString(fmt.Sprintf("%s %s\n", method, urlReader.Text())); err != nil {
 				return err
 			}
-			if _, err = targetsFile.WriteString(fmt.Sprintf("@%s\n", tmp.Name())); err != nil {
+			if _, err = targetsFile.WriteString(fmt.Sprintf("@%s\n", tmpBodyFile)); err != nil {
 				return err
 			}
 		}
@@ -94,6 +84,24 @@ func writeTargetsFile(method, urls, bodies, targets string) error {
 	}
 
 	return nil
+}
+
+// create a temp file for store body because vegeta
+// requires body to be in file instead of raw string
+// we don't delete tmp files for now because they can
+// be handy for debugging or re-run commands manually
+// make this a function of its own so defer can be used
+// to close file description upon func exit quickly
+func writeTempRequestBodyFile(b []byte) (tmpPath string, err error) {
+	tmp, err := ioutil.TempFile("", "load_test")
+	if err != nil {
+		return
+	}
+	defer tmp.Close()
+
+	tmpPath = tmp.Name()
+	_, err = tmp.Write(b)
+	return
 }
 
 // generate a file with randomised urls, one on each line
