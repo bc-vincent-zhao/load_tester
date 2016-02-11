@@ -48,6 +48,7 @@ func main() {
 	fs := flag.NewFlagSet("load_test", flag.ExitOnError)
 	reps := fs.Int("reps", 1, "# of repititions to run a single load test")
 	specFile := fs.String("specFile", "", "spec yaml for all endpoints to test")
+	randGen := fs.Bool("generateRandom", true, "generate new randomized url and request body for each repitition")
 
 	fs.Usage = func() {
 		fmt.Println("Usage: load_test [global flags] <command> [command flags]")
@@ -83,10 +84,13 @@ func main() {
 	// to make sure out test setup is not flawed
 	// and we can use the sample to identify outliers
 	for i := 0; i < *reps; i++ {
-		// generate randomized urls and data for each test iteration
-		// to make sure we hit longest execution path instead of some cache
-		if err := randomize(spec); err != nil {
-			log.Fatal(err)
+
+		if *randGen {
+			// generate randomized urls and data for each test iteration
+			// to make sure we hit longest execution path instead of some cache
+			if err := randomize(spec); err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		// run the actual test command
