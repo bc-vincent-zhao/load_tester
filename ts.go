@@ -32,7 +32,8 @@ func ts(spec Spec, opts *tsOpts) error {
 			fmt.Sprintf("-targets=%s", ep.TargetsFile),
 			fmt.Sprintf("-duration=%s", spec.Duration),
 			fmt.Sprintf("-rate=%d", ep.RequestRate),
-			fmt.Sprintf("-workers=%d", ep.RequestRate),
+			fmt.Sprintf("-workers=%d", spec.Workers),
+			fmt.Sprintf("-connections=%d", spec.Connections),
 			fmt.Sprintf("-output=%s_%s_@%d_%d.bin", opts.outputPrefix, ep.Name, ep.RequestRate, now),
 			fmt.Sprintf("-header=X-Auth-Token:%s", spec.AuthToken),
 		}

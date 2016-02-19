@@ -32,7 +32,14 @@ func saturate(spec Spec, opts *saturateOpts) error {
 			output []byte
 			err    error
 		)
-		cmd := exec.Command("wrk", "-t4", "-c100", fmt.Sprintf("-d%s", spec.Duration), "--script="+ep.Script, ep.Url)
+		args := []string{
+			fmt.Sprintf("-t%d", spec.Workers),
+			fmt.Sprintf("-c%d", spec.Connections),
+			fmt.Sprintf("--script=%s", ep.Script),
+			fmt.Sprintf("-d%s", spec.Duration),
+			ep.Url,
+		}
+		cmd := exec.Command("wrk", args...)
 		fmt.Printf("running %v \n", cmd)
 		if output, err = cmd.Output(); err != nil {
 			return err

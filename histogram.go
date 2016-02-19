@@ -32,10 +32,17 @@ func histogram(spec Spec, opts *histogramOpts) error {
 			output []byte
 			err    error
 		)
-		rate := fmt.Sprintf("--rate=%d", ep.RequestRate)
-		script := fmt.Sprintf("--script=%s", ep.Script)
+		args := []string{
+			fmt.Sprintf("-t%d", spec.Workers),
+			fmt.Sprintf("-c%d", spec.Connections),
+			fmt.Sprintf("--rate=%d", ep.RequestRate),
+			fmt.Sprintf("--script=%s", ep.Script),
+			fmt.Sprintf("-d%s", spec.Duration),
+			"--latency",
+			ep.Url,
+		}
 
-		cmd := exec.Command("wrk2", "-t4", "-c100", fmt.Sprintf("-d%s", spec.Duration), rate, script, "--latency", ep.Url)
+		cmd := exec.Command("wrk2", args...)
 		fmt.Printf("running %v \n", cmd)
 		if output, err = cmd.Output(); err != nil {
 			return err

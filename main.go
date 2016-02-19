@@ -19,6 +19,8 @@ type Spec struct {
 	UrlsFile    string `yaml:"rand_urls_file"`
 	BodiesFile  string `yaml:"rand_bodies_file"`
 	Duration    string `yaml:"duration"`
+	Workers     int    `yaml:"workers"`
+	Connections int    `yaml:"connections"`
 	Endpoints   []Endpoint
 }
 
